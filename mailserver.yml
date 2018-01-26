@@ -1,0 +1,20 @@
+- hosts: ['vuemania.com',]
+  name: 'Setup Mailserver'
+  gather_facts: no
+  become: yes
+  #  pre_tasks:
+  #  - shell: ln -s /var/services/homes /homes
+  vars:
+    ansible_ssh_user: root
+    ansible_ssh_transfer_method: sftp
+  
+  roles:
+    - postfix
+    - role: ansible-dkim      
+      vars:
+        dkim_selector: mail
+        dkim_domains: "{{ domain_name }}"
+      tags: dkim
+    
+    - dovecot
+    - roundcube

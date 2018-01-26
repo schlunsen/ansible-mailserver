@@ -1,0 +1,6 @@
+[hosts]
+vuemania.com
+
+[hosts:vars]
+domain_name="vuemania.com"
+ansible_distribution="Debian"

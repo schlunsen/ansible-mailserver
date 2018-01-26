@@ -1,0 +1,30 @@
+- name: "Install postfix"
+  apt: name=postfix state=installed update_cache=yes
+
+- name: "Install opendkim"
+  apt: name={{ item.name }} state=installed
+  with_items:
+    - { name: opendkim }
+    - { name: opendkim-tools }
+
+
+- name: "Install postfix configuration"
+  template: src=main.cf.j2
+            dest=/etc/postfix/main.cf
+            backup=yes
+
+
+- name: "Install opendkim configuration"
+  template: src=opendkim.conf.j2
+            dest=/etc/opendkim.conf
+            backup=yes
+  #notify: reload opendkim
+
+
+- name: "Create opendkim directory"
+  file: path=/etc/opendkim/keys/{{domain_name}} state=directory
+
+- name: Restart postfix
+  service:
+    name: postfix
+    state: restarted

@@ -1,0 +1,61 @@
+---
+- name: opendkim packages are installed
+  apt: 
+    name: "{{ item }}"
+    state: installed
+  with_items:
+   - opendkim
+   - opendkim-tools
+  when: (ansible_distribution == "Debian")
+
+
+- name: opendkim socket configured
+  lineinfile: dest=/etc/default/opendkim regexp=^SOCKET= line='SOCKET="inet:8891@localhost"'
+  notify:
+   - restart opendkim
+  when: (ansible_distribution == "Debian")
+
+- name: opendkim directory present
+  file: path=/etc/opendkim state=directory
+
+- name: opendkim key directory present
+  file: path=/etc/opendkim/keys state=directory
+
+- name: opendkim TrustedHosts present
+  template: src=TrustedHosts.j2 dest=/etc/opendkim/TrustedHosts
+  notify:
+   - restart opendkim
+
+- name: opendkim is configured
+  template: src=opendkim.conf.j2 dest=/etc/opendkim.conf
+  notify:
+   - restart opendkim
+
+- name: opendkim KeyTable is configured
+  template: src=KeyTable.j2 dest=/etc/opendkim/KeyTable
+  notify:
+   - restart opendkim
+
+- name: opendkim SigningTable is configured
+  template: src=SigningTable.j2 dest=/etc/opendkim/SigningTable
+  notify:
+   - restart opendkim
+
+- name: create dirs for key
+  file: path="/etc/opendkim/keys/{{ item }}" state=directory
+  with_items: "{{ dkim_domains }}"
+
+- name: generate signing key
+  shell: opendkim-genkey -s {{ dkim_selector }} -d {{ item }} -D /etc/opendkim/keys/{{ item }}
+  args:
+    creates: "/etc/opendkim/keys/{{ item }}/{{ dkim_selector }}.private"
+  with_items: "{{ dkim_domains }}"
+  notify:
+   - restart opendkim
+
+- name: ensure signing key owner
+  file: path=/etc/opendkim/keys/{{ item }}/{{ dkim_selector }}.private owner=opendkim group=opendkim
+  with_items: "{{ dkim_domains }}"
+
+- name: opendkim is started
+  service: name=opendkim state=started enabled=yes

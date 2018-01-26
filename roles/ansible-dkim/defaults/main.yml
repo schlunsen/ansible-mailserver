@@ -1,0 +1,8 @@
+---
+dkim_trustedhosts:
+  - "127.0.0.1"
+  - "localhost"
+  - "{{ domain_name }}"
+
+dkim_domains:
+  - "{{ domain_name }}"
